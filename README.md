@@ -1,7 +1,8 @@
 # ggcorr: correlation matrixes with ggplot2
 
-This function is part of the [GGally][ggally] package. Install from GitHub:
+This function is part of the [GGally][ggally] package. Install it from CRAN or from GitHub:
 
+    install.packages("GGally", type = "source")
     devtools::install_github("ggally", "ggobi")
 
 [Someone at Stack Overflow][so] suggested plotting correlation matrixes with `ggplot2`. `ggcorr` implements that idea in a style similar to the `corrplot` function of the `arm` package. The example below uses [NBA statistics][fd] shared by Nathan Yau at Flowing Data.
