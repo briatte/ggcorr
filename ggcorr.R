@@ -10,26 +10,56 @@ if(getRversion() >= "2.15.1") {
 #'
 #' @export
 #' @param data a data matrix. Should contain numerical (continuous) data.
-#' @param method a character string giving a method for computing covariances in the presence of missing values. This must be (an abbreviation of) one of the strings \code{"everything"}, \code{"all.obs"}, \code{"complete.obs"}, \code{"na.or.complete"}, or \code{"pairwise.complete.obs"}. Defaults to \code{"pairwise"}.
+#' @param method a character string giving a method for computing covariances in the presence of missing values. This must be (an abbreviation of) one of the strings \code{"everything"}, \code{"all.obs"}, \code{"complete.obs"}, \code{"na.or.complete"}, or \code{"pairwise.complete.obs"}.
+#' Defaults to \code{"pairwise"}.
 #' @param cor_matrix the named correlation matrix to use for calculations.
-#' @param palette if \code{nbreaks} has been set to something, a ColorBrewer palette to be used for correlation coefficients. Defaults to \code{"RdYlGn"}.
-#' @param name a character string for the legend that shows quintiles of correlation coefficients.
-#' @param geom the geom object to use. Accepts either \code{tile} (the default) or \code{circle}, to plot proportionally scaled circles.
-#' @param max_size the maximum size for circles, as passed to \code{scale_size_identity} for proportional scaling. Defaults to \code{6}.
-#' @param min_size the maximum size for circles, as passed to \code{scale_size_identity} for proportional scaling. Defaults to \code{2}.
-#' @param label whether to add correlation coefficients as two-digit numbers over the plot. Defaults to \code{FALSE}.
-#' @param label_alpha whether to make the correlation coefficients transparent as they come close to 0. Defaults to \code{FALSE}.
+#' @param palette if \code{nbreaks} has been set to something, a ColorBrewer
+#' palette to be used for correlation coefficients. Defaults to \code{"RdYlGn"}.
+#' @param name a character string for the legend that shows quintiles of
+#' correlation coefficients. Defaults to nothing.
+#' @param geom the geom object to use. Accepts either \code{tile} (the default)
+#' or \code{circle}, to plot proportionally scaled circles.
+#' @param max_size the maximum size for circles, as passed to \code{scale_size_identity}
+#' for proportional scaling. Defaults to \code{6}.
+#' @param min_size the maximum size for circles, as passed to \code{scale_size_identity}
+#' for proportional scaling. Defaults to \code{2}.
+#' @param label whether to add correlation coefficients as two-digit numbers
+#' over the plot. Defaults to \code{FALSE}.
+#' @param label_alpha whether to make the correlation coefficients transparent
+#' as they come close to 0. Defaults to \code{FALSE}.
 #' @param label_color color for the correlation coefficients. Defaults to \code{"black"}.
-#' @param label_round decimal rounding of the correlation coefficients. Defaults to \code{1}.
-#' @param nbreaks number of breaks to apply to the correlation coefficients. Defaults to \code{NULL} (continuous scaling).
-#' @param low lower color of the gradient for continuous scaling of the correlation coefficients. Defaults to \code{d73027} (red).
-#' @param mid mid color of the gradient for continuous scaling of the correlation coefficients. Defaults to \code{d73027} (yellow).
-#' @param high upper color of the gradient for continuous scaling of the correlation coefficients. Defaults to \code{1a9850} (red).
-#' @param midpoint the midpoint value for continuous scaling of the correlation coefficients. Defaults to \code{0}.
-#' @param limits whether to bound the continuous color scaling of the correlation coefficients between -1 and +1. Defaults to \code{TRUE}.
-#' @param ... other arguments supplied to geom_text for the diagonal labels.  Arguments pertaining to the title or other items can be achieved through ggplot2 methods.
+#' @param label_round decimal rounding of the correlation coefficients.
+#' Defaults to \code{1}.
+#' @param nbreaks number of breaks to apply to categorize the correlation
+#' coefficients. Defaults to \code{NULL} (continuous scaling).
+#' @param digits number of digits to show in the breaks of the correlation
+#' coefficients. Defaults to \code{2}.
+#' @param drop use the empirical range of correlation coefficients for their categorization,
+#' which is \emph{not} recommended (see 'Details'). Defaults to \code{FALSE}.
+#' @param low lower color of the gradient for continuous scaling of the correlation
+#' coefficients. Defaults to \code{d73027} (red).
+#' @param mid mid color of the gradient for continuous scaling of the correlation
+#' coefficients. Defaults to \code{d73027} (yellow).
+#' @param high upper color of the gradient for continuous scaling of the correlation
+#' coefficients. Defaults to \code{1a9850} (red).
+#' @param midpoint the midpoint value for continuous scaling of the correlation
+#' coefficients. Defaults to \code{0}.
+#' @param limits whether to bound the continuous color scaling of the correlation
+#' coefficients between -1 and +1. Defaults to \code{TRUE}.
+#' @param ... other arguments supplied to geom_text for the diagonal labels.
+#' Arguments pertaining to the title or other items can be achieved through ggplot2 methods.
+#' @details The \code{nbreaks} argument tries to break up the correlation
+#' coefficients into an ordinal color scale. Recommended values for the numbers
+#' of breaks are 3 to 11, as values above 11 are visually difficult to separate
+#' and are not supported by diverging ColorBrewer palettes.
+#'
+#' The breaks will range from -1 to +1, unless drop is set to \code{FALSE}, in
+#' which case the empirical range of the correlation coefficients is used. The
+#' latter is not recommended, as it creates a disbalance between the colors of
+#' negative and positive coefficients.
 #' @seealso \code{\link{cor}} and \code{\link[arm]{corrplot}}
-#' @author Francois Briatte \email{f.briatte@@gmail.com} with contributions from Amos B. Elberg \email{amos.elberg@@gmail.com} and Barret Schloerke \email{schloerke@gmail.com}
+#' @author Francois Briatte \email{f.briatte@@gmail.com} with contributions from
+#' Amos B. Elberg \email{amos.elberg@@gmail.com} and Barret Schloerke \email{schloerke@gmail.com}
 #' @importFrom reshape melt melt.data.frame melt.default
 #' @examples
 #' # Basketball statistics provided by Nathan Yau at Flowing Data.
@@ -41,8 +71,7 @@ if(getRversion() >= "2.15.1") {
 #' # Labelled output, with coefficient transparency.
 #' ggcorr(dt[, -1],
 #'        label = TRUE,
-#'        label_alpha = TRUE,
-#'        name = "")
+#'        label_alpha = TRUE)
 #'
 #' # Custom options.
 #' ggcorr(
@@ -61,7 +90,7 @@ if(getRversion() >= "2.15.1") {
 #' # Supply your own correlation matrix
 #' ggcorr(
 #'   data = NULL,
-#'   cor_matrix = cor(dt[,-1], use = "complete.obs")
+#'   cor_matrix = cor(dt[,-1], use = "pairwise")
 #' )
 
 ggcorr <- function(
@@ -69,7 +98,7 @@ ggcorr <- function(
   method = "pairwise",
   cor_matrix = cor(data, use = method),
   palette = "RdYlGn",
-  name = "rho",
+  name = "",
   geom = "tile",
   min_size = 2,
   max_size = 6,
@@ -78,6 +107,8 @@ ggcorr <- function(
   label_color = "black",
   label_round = 1,
   nbreaks = NULL,
+  digits = 2,
+  drop = FALSE,
   low = "#d73027",
   mid = "#ffffbf",
   high = "#1a9850",
@@ -106,15 +137,21 @@ ggcorr <- function(
 
   if(!is.null(nbreaks)) {
 
-    s <- seq(-1, 1, length.out = nbreaks + 1)
-    M$value <- droplevels(cut(M$value, breaks = s, include.lowest = TRUE,
-                              label = cut(s, breaks = s)[-1]))
+    s = seq(-1, 1, length.out = nbreaks + 1)
+
+    if(!nbreaks %% 2)
+      s = unique(sort(c(s, 0)))
+
+    M$value = droplevels(cut(M$value, breaks = s, include.lowest = TRUE, dig.lab = digits))
+    M$value = factor(M$value, levels = unique(cut(s, breaks = s, dig.lab = digits, include.lowest = TRUE)))
 
   }
 
   if(is.null(midpoint)) {
+
     midpoint = median(M$value, na.rm = TRUE)
     message("Color gradient midpoint set at median correlation to ", round(midpoint, 2))
+
   }
 
   M$row <- factor(M$row, levels = unique(as.character(M$variable)))
@@ -141,8 +178,8 @@ ggcorr <- function(
   if(geom == "circle") {
 
     p = p +
-      geom_point(aes(size = num + 0.25), color = "grey50") +
-      geom_point(aes(size = num, color = value))
+      geom_point(aes(size = abs(num) + 0.25), color = "grey50") +
+      geom_point(aes(size = abs(num), color = value))
 
     if(is.null(nbreaks) & limits)
       p = p +
@@ -158,7 +195,7 @@ ggcorr <- function(
     else
       p = p +
         scale_size_identity(name) +
-        scale_color_brewer(name, palette = palette) +
+        scale_color_brewer(name, palette = palette, drop = drop) +
         guides(colour = guide_legend(name, override.aes = list(size = (min_size + max_size) / 2)))
 
   }
@@ -172,7 +209,7 @@ ggcorr <- function(
     else if(is.null(nbreaks))
       p = p + scale_fill_gradient2(name, low = low, mid = mid, high = high, midpoint = midpoint)
     else
-      p = p + scale_fill_brewer(name, palette = palette)
+      p = p + scale_fill_brewer(name, palette = palette, drop = drop)
 
   }
 
