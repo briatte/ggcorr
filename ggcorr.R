@@ -107,9 +107,6 @@ ggcorr <- function(
 
   }
 
-  ## print(summary(M$value))
-  ## print(summary(M$num))
-
   if(is.null(midpoint)) {
     midpoint = median(M$value, na.rm = TRUE)
     message("Color gradient midpoint set at median correlation to ", round(midpoint, 2))
@@ -134,34 +131,34 @@ ggcorr <- function(
   )
 
   p = ggplot(M, aes(x = row, y = variable))
-  g <- guide_legend(name)
 
   # apply main geom
   if(geom == "circle") {
 
     p = p +
       geom_point(aes(size = num + 0.25), color = "grey50") +
-      geom_point(aes(size = num, color = value)) +
-      scale_size_identity(name) +
-      guides(colour = guide_legend(name, override.aes = list(size = 1.5 * round(median(M$num)))),
-             size = g)
+      geom_point(aes(size = num, color = value))
 
     if(is.null(nbreaks))
-      p
+      p = p +
+        scale_size_continuous(range = c(min_size, max_size)) +
+        scale_color_gradient2(name, low = low, mid = mid, high = high, midpoint = midpoint) +
+        guides(size = FALSE)
     else
-      p = p + scale_color_brewer(palette = palette)
+      p = p +
+        scale_size_identity(name) +
+        scale_color_brewer(name, palette = palette) +
+        guides(colour = guide_legend(name, override.aes = list(size = (min_size + max_size) / 2)))
 
   }
   else {
 
-    p = p +
-      geom_tile(aes(fill = value), colour = "white") +
-      guides(fill = g)
+    p = p + geom_tile(aes(fill = value), colour = "white")
 
     if(is.null(nbreaks))
-      p = p + scale_fill_gradient2(low = low, mid = mid, high = high, midpoint = midpoint)
+      p = p + scale_fill_gradient2(name, low = low, mid = mid, high = high, midpoint = midpoint)
     else
-      p = p + scale_fill_brewer(palette = palette)
+      p = p + scale_fill_brewer(name, palette = palette)
 
   }
 
