@@ -24,7 +24,7 @@ if(getRversion() >= "2.15.1") {
 #' @param nbreaks number of breaks to apply.  Defaults to \code{8}.
 #' @param ... other arguments supplied to geom_text for the diagonal labels.  Arguments pertaining to the title or other items can be achieved through ggplot2 methods.
 #' @seealso \code{\link{cor}} and \code{\link[arm]{corrplot}}
-#' @author Francois Briatte \email{f.briatte@@gmail.com} with contributions from Amos B. Elberg \email{amos.elberg@@gmail.com}
+#' @author Francois Briatte \email{f.briatte@@gmail.com} with contributions from Amos B. Elberg \email{amos.elberg@@gmail.com} and Barret Schloerke \email{schloerke@gmail.com}
 #' @importFrom reshape melt melt.data.frame melt.default
 #' @examples
 #' # Basketball statistics provided by Nathan Yau at Flowing Data.
