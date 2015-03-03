@@ -155,13 +155,15 @@ ggcorr <- function(
   }
 
   M$row <- factor(M$row, levels = unique(as.character(M$variable)))
-  M$num <- as.numeric(M$value)
 
-  if(!is.null(nbreaks))
-    M$num <- abs(M$num - (nbreaks - 1)/2) / (nbreaks/2) * (max_size - min_size) + min_size
+  # for circles
+  M$num = as.numeric(M$value)
+  M$num = abs(M$num - median(unique(M$num), na.rm = TRUE))
+  M$num = as.numeric(factor(M$num))
+  M$num = seq(min_size, max_size, length.out = length(na.omit(unique(M$num))))[ M$num ]
 
   diag  <- subset(M, row == variable)
-  M <- M[complete.cases(M),]
+  M <- M[complete.cases(M), ]
 
   # clean plot panel
   po.nopanel <- list(theme(
@@ -178,8 +180,8 @@ ggcorr <- function(
   if(geom == "circle") {
 
     p = p +
-      geom_point(aes(size = abs(num) + 0.25), color = "grey50") +
-      geom_point(aes(size = abs(num), color = value))
+      geom_point(aes(size = num + 0.25), color = "grey50") +
+      geom_point(aes(size = num, color = value))
 
     if(is.null(nbreaks) & limits)
       p = p +
