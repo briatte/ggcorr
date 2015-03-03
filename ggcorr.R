@@ -78,6 +78,7 @@ ggcorr <- function(
   mid = "#ffffbf",
   midpoint = 0,
   high = "#1a9850",
+  limits = TRUE,
   ...) {
 
   M <- cor_matrix
@@ -139,11 +140,17 @@ ggcorr <- function(
       geom_point(aes(size = num + 0.25), color = "grey50") +
       geom_point(aes(size = num, color = value))
 
-    if(is.null(nbreaks))
+    if(is.null(nbreaks) & limits)
       p = p +
         scale_size_continuous(range = c(min_size, max_size)) +
-        scale_color_gradient2(name, low = low, mid = mid, high = high, midpoint = midpoint) +
+        scale_color_gradient2(name, low = low, mid = mid, high = high, midpoint = midpoint,
+                              limits = c(-1, 1)) +
         guides(size = FALSE)
+    else if(is.null(nbreaks))
+      p = p +
+        scale_size_continuous(range = c(min_size, max_size)) +
+        scale_fill_gradient2(name, low = low, mid = mid, high = high, midpoint = midpoint) +
+        guide(size = FALSE)
     else
       p = p +
         scale_size_identity(name) +
@@ -155,7 +162,10 @@ ggcorr <- function(
 
     p = p + geom_tile(aes(fill = value), colour = "white")
 
-    if(is.null(nbreaks))
+    if(is.null(nbreaks) & limits)
+      p = p + scale_fill_gradient2(name, low = low, mid = mid, high = high, midpoint = midpoint,
+                                   limits = c(-1, 1))
+    else if(is.null(nbreaks))
       p = p + scale_fill_gradient2(name, low = low, mid = mid, high = high, midpoint = midpoint)
     else
       p = p + scale_fill_brewer(name, palette = palette)
