@@ -11,8 +11,8 @@ if(getRversion() >= "2.15.1") {
 #' @export
 #' @param data a data matrix. Should contain numerical (continuous) data.
 #' @param method a character string giving a method for computing covariances in the presence of missing values. This must be (an abbreviation of) one of the strings \code{"everything"}, \code{"all.obs"}, \code{"complete.obs"}, \code{"na.or.complete"}, or \code{"pairwise.complete.obs"}. Defaults to \code{"pairwise"}.
-#' @param cor_matrix the named correlation matrix to use for calculations
-#' @param palette a ColorBrewer palette to be used for correlation coefficients. Defaults to \code{"RdYlGn"}.
+#' @param cor_matrix the named correlation matrix to use for calculations.
+#' @param palette if \code{nbreaks} has been set to something, a ColorBrewer palette to be used for correlation coefficients. Defaults to \code{"RdYlGn"}.
 #' @param name a character string for the legend that shows quintiles of correlation coefficients.
 #' @param geom the geom object to use. Accepts either \code{tile} (the default) or \code{circle}, to plot proportionally scaled circles.
 #' @param max_size the maximum size for circles, as passed to \code{scale_size_identity} for proportional scaling. Defaults to \code{6}.
@@ -21,7 +21,12 @@ if(getRversion() >= "2.15.1") {
 #' @param label_alpha whether to make the correlation coefficients transparent as they come close to 0. Defaults to \code{FALSE}.
 #' @param label_color color for the correlation coefficients. Defaults to \code{"black"}.
 #' @param label_round decimal rounding of the correlation coefficients. Defaults to \code{1}.
-#' @param nbreaks number of breaks to apply.  Defaults to \code{8}.
+#' @param nbreaks number of breaks to apply to the correlation coefficients. Defaults to \code{NULL} (continuous scaling).
+#' @param low lower color of the gradient for continuous scaling of the correlation coefficients. Defaults to \code{d73027} (red).
+#' @param mid mid color of the gradient for continuous scaling of the correlation coefficients. Defaults to \code{d73027} (yellow).
+#' @param high upper color of the gradient for continuous scaling of the correlation coefficients. Defaults to \code{1a9850} (red).
+#' @param midpoint the midpoint value for continuous scaling of the correlation coefficients. Defaults to \code{0}.
+#' @param limits whether to bound the continuous color scaling of the correlation coefficients between -1 and +1. Defaults to \code{TRUE}.
 #' @param ... other arguments supplied to geom_text for the diagonal labels.  Arguments pertaining to the title or other items can be achieved through ggplot2 methods.
 #' @seealso \code{\link{cor}} and \code{\link[arm]{corrplot}}
 #' @author Francois Briatte \email{f.briatte@@gmail.com} with contributions from Amos B. Elberg \email{amos.elberg@@gmail.com} and Barret Schloerke \email{schloerke@gmail.com}
@@ -37,8 +42,7 @@ if(getRversion() >= "2.15.1") {
 #' ggcorr(dt[, -1],
 #'        label = TRUE,
 #'        label_alpha = TRUE,
-#'        name = "") +
-#'   ggplot2::theme(legend.position = "bottom")
+#'        name = "")
 #'
 #' # Custom options.
 #' ggcorr(
@@ -57,7 +61,7 @@ if(getRversion() >= "2.15.1") {
 #' # Supply your own correlation matrix
 #' ggcorr(
 #'   data = NULL,
-#'   cor_matrix = cor(dt[,-1], use = "pairwise")
+#'   cor_matrix = cor(dt[,-1], use = "complete.obs")
 #' )
 
 ggcorr <- function(
@@ -76,8 +80,8 @@ ggcorr <- function(
   nbreaks = NULL,
   low = "#d73027",
   mid = "#ffffbf",
-  midpoint = 0,
   high = "#1a9850",
+  midpoint = 0,
   limits = TRUE,
   ...) {
 
