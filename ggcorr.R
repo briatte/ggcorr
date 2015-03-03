@@ -73,64 +73,98 @@ ggcorr <- function(
   label_alpha = FALSE,
   label_color = "black",
   label_round = 1,
-  nbreaks = 8,
+  nbreaks = NULL,
+  low = "#d73027",
+  mid = "#ffffbf",
+  midpoint = 0,
+  high = "#1a9850",
   ...) {
-  
+
   M <- cor_matrix
-  
+
   # correlation coefficients
   D <- round(M, label_round)
-  
+
   D <- D * lower.tri(D)
   D <- as.data.frame(D)
-  
+
   rowNames <- names(D)
   D <- data.frame(row = rowNames, D)
   D <- melt(D, id.vars = "row")
-  
+
   # correlation quantiles
   M <- M * lower.tri(M)
   M <- as.data.frame(M)
   M <- data.frame(row = rowNames, M)
   M <- melt(M, id.vars = "row")
   M$value[M$value == 0] <- NA
-  s <- seq(-1, 1, length.out = nbreaks + 1)
-  M$value <- droplevels(cut(M$value, breaks = s, include.lowest = TRUE,
-                            label = cut(s, breaks = s)[-1]))
+
+  if(!is.null(nbreaks)) {
+
+    s <- seq(-1, 1, length.out = nbreaks + 1)
+    M$value <- droplevels(cut(M$value, breaks = s, include.lowest = TRUE,
+                              label = cut(s, breaks = s)[-1]))
+
+  }
+
+  ## print(summary(M$value))
+  ## print(summary(M$num))
+
+  if(is.null(midpoint)) {
+    midpoint = median(M$value, na.rm = TRUE)
+    message("Color gradient midpoint set at median correlation to ", round(midpoint, 2))
+  }
+
   M$row <- factor(M$row, levels = unique(as.character(M$variable)))
   M$num <- as.numeric(M$value)
-  M$num <- abs(M$num - (nbreaks - 1)/2) / (nbreaks/2) * (max_size - min_size) + min_size
-  
+
+  if(!is.null(nbreaks))
+    M$num <- abs(M$num - (nbreaks - 1)/2) / (nbreaks/2) * (max_size - min_size) + min_size
+
   diag  <- subset(M, row == variable)
   M <- M[complete.cases(M),]
-  
+
   # clean plot panel
   po.nopanel <- list(theme(
     panel.background = element_blank(),
     panel.grid.minor = element_blank(),
     panel.grid.major = element_blank(),
+    legend.key = element_blank(),
     axis.text.x = element_text(angle = -90))
   )
-  
+
   p = ggplot(M, aes(x = row, y = variable))
   g <- guide_legend(name)
-  
+
   # apply main geom
   if(geom == "circle") {
+
     p = p +
       geom_point(aes(size = num + 0.25), color = "grey50") +
       geom_point(aes(size = num, color = value)) +
-      scale_colour_brewer(name, palette = palette) +
       scale_size_identity(name) +
-      guides(colour = g, size = g)
+      guides(colour = guide_legend(name, override.aes = list(size = 1.5 * round(median(M$num)))),
+             size = g)
+
+    if(is.null(nbreaks))
+      p
+    else
+      p = p + scale_color_brewer(palette = palette)
+
   }
   else {
+
     p = p +
-      scale_fill_brewer(palette = palette) +
       geom_tile(aes(fill = value), colour = "white") +
       guides(fill = g)
+
+    if(is.null(nbreaks))
+      p = p + scale_fill_gradient2(low = low, mid = mid, high = high, midpoint = midpoint)
+    else
+      p = p + scale_fill_brewer(palette = palette)
+
   }
-  
+
   # add coefficient text
   if(label) {
     if(label_alpha) {
@@ -146,7 +180,7 @@ ggcorr <- function(
                   color = label_color)
     }
   }
-  
+
   # add diagonal and options
   p = p  +
     geom_text(data = diag, aes(label = variable), ...) +
@@ -155,6 +189,6 @@ ggcorr <- function(
     labs(x = NULL, y = NULL) +
     coord_equal() +
     po.nopanel
-  
+
   return(p)
 }
