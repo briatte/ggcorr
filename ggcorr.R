@@ -1,5 +1,5 @@
 if (getRversion() >= "2.15.1") {
-  utils::globalVariables(c("x", "y", "c", "b"))
+  utils::globalVariables(c("x", "y", "c", "b", "l"))
 }
 
 #' ggcorr - Plot a correlation matrix with ggplot2
@@ -235,6 +235,7 @@ ggcorr <- function(
 
   # -- plot structure ----------------------------------------------------------
 
+  m$l = round(m$c, label_round)
   p = ggplot(na.omit(m), aes(x, y))
 
   if (geom == "tile") {
@@ -347,14 +348,14 @@ ggcorr <- function(
       # -- text, continuous ----------------------------------------------------
 
       p = p +
-        geom_text(aes(label = round(c, label_round), color = c))
+        geom_text(aes(label = l, color = c), ...)
 
     } else {
 
       # -- text, ordinal -------------------------------------------------------
 
       p = p +
-        geom_text(aes(label = round(c, label_round), color = b))
+        geom_text(aes(label = l, color = b), ...)
 
     }
 
@@ -392,30 +393,24 @@ ggcorr <- function(
 
   if (label) {
 
-    m = na.omit(m)
-    m$c = round(m$c, label_round)
-
     if (isTRUE(label_alpha)) {
 
       p = p +
-        geom_text(data = m,
-                  aes(x, y, label = c, alpha = abs(c)),
+        geom_text(aes(x, y, label = l, alpha = abs(c)),
                   color = label_color,
                   show_guide = FALSE)
 
     } else if (label_alpha > 0) {
 
       p = p +
-        geom_text(data = m,
-                  aes(x, y, label = c,
+        geom_text(aes(x, y, label = l,
                       alpha = label_alpha, color = label_color,
                       show_guide = FALSE))
 
     } else {
 
       p = p +
-        geom_text(data = m,
-                  aes(x, y, label = c),
+        geom_text(aes(x, y, label = l),
                   color = label_color)
 
     }
