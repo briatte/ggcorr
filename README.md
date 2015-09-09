@@ -1,21 +1,29 @@
 # ggcorr: correlation matrixes with ggplot2
 
-This function is part of the [GGally][ggally] package. Install it from CRAN or from GitHub:
+This repository contains the latest version of the `ggcorr` function, which allows to plot correlation matrixes with [`ggplot2`][ggplot2].
 
-	# Github
-	library(devtools)
-	install_github("ggobi/ggally")
+## INSTALL
 
-	# CRAN
-	install.packages("GGally")
+`ggcorr` is part of the __`GGally`__ package. Install it from CRAN or from GitHub:
 
-[Someone at Stack Overflow][so] suggested plotting correlation matrixes with `ggplot2`. 
-`ggcorr` implements that idea in a style similar to the `corrplot` function of the `arm` package. 
-The examples below uses [NBA statistics][fd] shared by Nathan Yau at Flowing Data.
+```{r}
+install.packages("GGally")
+devtools::install_github("ggobi/ggally")
+```
 
-![](example1.png)
-![](example2.png)
+You can also install `ggcorr` as a standalone function from this repository:
+
+```{r}
+source("https://raw.githubusercontent.com/briatte/ggcorr/master/ggcorr.R")
+```
+
+The idea for this function comes from [a Stack Overflow question][so], which suggested using [`ggplot2`][ggplot2] to plot correlation matrixes like those produced by the [`corrplot`](http://www.rdocumentation.org/packages/arm/functions/corrplot) function of the [`arm`](http://www.rdocumentation.org/packages/arm) package. 
+
+The example below uses [NBA statistics][fd] shared by Nathan Yau at [Flowing Data](http://flowingdata.com/):
+
+![](demo.png)
 
 [ggally]: https://github.com/ggobi/ggally
+[ggplot2]: http://ggplot2.org/
 [so]: http://stackoverflow.com/questions/12196756/significance-level-added-to-matrix-correlation-heatmap-using-ggplot2
 [fd]: http://flowingdata.com/2010/01/21/how-to-make-a-heatmap-a-quick-and-easy-solution/
