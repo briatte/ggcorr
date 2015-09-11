@@ -163,7 +163,6 @@ ggcorr <- function(
 
   require(ggplot2, quietly = TRUE)
   require(reshape2, quietly = TRUE)
-  require(scales, quietly = TRUE)
 
   # -- check geom argument -----------------------------------------------------
 
