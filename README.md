@@ -20,7 +20,7 @@ source("https://raw.githubusercontent.com/briatte/ggcorr/master/ggcorr.R")
 
 ## VIGNETTE
 
-The `ggcorr` function is fully documented in [this vignette](https://briatte.github.io/ggcorr/).
+The `ggcorr` function is fully documented in [this vignette](https://briatte.github.io/ggcorr).
 
 The [vignette source](vignette) is included in this repository.
 

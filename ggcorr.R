@@ -8,7 +8,8 @@ if (getRversion() >= "2.15.1") {
 #' The function is directly inspired by Tian Zheng and Yu-Sung Su's
 #' \code{\link[arm]{corrplot}} function.
 #' Please visit \url{http://github.com/briatte/ggcorr} for the latest version
-#' of \code{ggcorr}.
+#' of \code{ggcorr}, and see the vignette at 
+#' \url{https://briatte.github.io/ggcorr/} for many examples of how to use it.
 #'
 #' @export
 #' @param data a data frame or matrix containing numeric (continuous) data. If
