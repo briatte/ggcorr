@@ -1,5 +1,5 @@
 if (getRversion() >= "2.15.1") {
-  utils::globalVariables(c("x", "y", "c", "b", "l"))
+  utils::globalVariables(c("x", "y", "coefficient", "breaks", "label"))
 }
 
 #' ggcorr - Plot a correlation matrix with ggplot2
@@ -75,6 +75,9 @@ if (getRversion() >= "2.15.1") {
 #' coefficients in the color scale, which is \emph{not} recommended (see
 #' 'Details').
 #' Defaults to \code{FALSE}.
+#' @param layout.exp a multiplier to expand the horizontal axis if variable
+#' names get clipped: see \link[scales]{expand_range} for details.
+#' Defaults to \code{0} (no expansion).
 #' @param legend.position where to put the legend of the correlation
 #' coefficients: see \code{\link[ggplot2]{theme}} for details.
 #' Defaults to \code{"bottom"}.
@@ -96,7 +99,7 @@ if (getRversion() >= "2.15.1") {
 #' @seealso \code{\link[stats]{cor}} and \code{\link[arm]{corrplot}}
 #' @author Francois Briatte, with contributions from Amos B. Elberg and
 #' Barret Schloerke
-#' @importFrom reshape melt melt.data.frame melt.default
+#' @importFrom reshape2 melt
 #' @examples
 #' # Basketball statistics provided by Nathan Yau at Flowing Data.
 #' dt <- read.csv("http://datasets.flowingdata.com/ppg2008.csv")
@@ -135,6 +138,11 @@ ggcorr <- function(
   nbreaks = NULL,
   digits = 2,
   name = "",
+  low = "#3B9AB2",  # (blue) replaces "#d73027" (red)
+  mid = "#EEEEEE",  # (grey) replaces "#ffffbf" (light yellow)
+  high = "#F21A00", # (red)  replaces "#1a9850" (green)
+  midpoint = 0,
+  palette = NULL,
   geom = "tile",
   min_size = 2,
   max_size = 6,
@@ -142,22 +150,20 @@ ggcorr <- function(
   label_alpha = FALSE,
   label_color = "black",
   label_round = 1,
-  drop = FALSE,
-  low = "#3B9AB2",  # (blue) replaces "#d73027" (red)
-  mid = "#EEEEEE",  # (grey) replaces "#ffffbf" (light yellow)
-  high = "#F21A00", # (red)  replaces "#1a9850" (green)
-  midpoint = 0,
-  palette = NULL,
+  label_size = 4,
   limits = TRUE,
+  drop = !limits,
+  layout.exp = 0,
   legend.position = "right",
   legend.size = 9,
   ...) {
 
   # -- required packages -------------------------------------------------------
-  
+
   require(ggplot2, quietly = TRUE)
-  require(reshape, quietly = TRUE)
-  
+  require(reshape2, quietly = TRUE)
+  require(scales, quietly = TRUE)
+
   # -- check geom argument -----------------------------------------------------
 
   if (length(geom) > 1 || !geom %in% c("blank", "circle", "text", "tile")) {
@@ -204,22 +210,23 @@ ggcorr <- function(
   # -- correlation data.frame --------------------------------------------------
 
   m = data.frame(m * lower.tri(m))
-  m$.row.names. = rownames(m)
-  m = melt(m, id.vars = ".row.names.")
-  names(m) = c("x", "y", "c")
-  m$c[ m$c == 0 ] = NA
+  m$.ggally_ggcorr_row_names = rownames(m)
+  m = reshape2::melt(m, id.vars = ".ggally_ggcorr_row_names")
+  names(m) = c("x", "y", "coefficient")
+  m$coefficient[ m$coefficient == 0 ] = NA
 
   # -- correlation quantiles ---------------------------------------------------
 
   if (!is.null(nbreaks)) {
 
-    s = seq(-1, 1, length.out = nbreaks + 1)
+    x = seq(-1, 1, length.out = nbreaks + 1)
 
     if (!nbreaks %% 2) {
-      s = unique(sort(c(s, 0)))
+      x = sort(c(x, 0))
     }
 
-    m$b = cut(m$c, breaks = s, include.lowest = TRUE, dig.lab = digits)
+    m$breaks = cut(m$coefficient, breaks = unique(x), include.lowest = TRUE,
+                   dig.lab = digits)
 
   }
 
@@ -227,7 +234,7 @@ ggcorr <- function(
 
   if (is.null(midpoint)) {
 
-    midpoint = median(m$c, na.rm = TRUE)
+    midpoint = median(m$coefficient, na.rm = TRUE)
     message(paste("Color gradient midpoint set at median correlation to",
                   round(midpoint, 2)))
 
@@ -235,36 +242,36 @@ ggcorr <- function(
 
   # -- plot structure ----------------------------------------------------------
 
-  m$l = round(m$c, label_round)
+  m$label = round(m$coefficient, label_round)
   p = ggplot(na.omit(m), aes(x, y))
 
   if (geom == "tile") {
 
-    if (is.null(m$b)) {
+    if (is.null(nbreaks)) {
 
       # -- tiles, continuous ---------------------------------------------------
 
       p = p +
-        geom_tile(aes(fill = c), color = "white")
+        geom_tile(aes(fill = coefficient), color = "white")
 
     } else {
 
       # -- tiles, ordinal ------------------------------------------------------
 
       p = p +
-        geom_tile(aes(fill = b), color = "white")
+        geom_tile(aes(fill = breaks), color = "white")
 
     }
 
     # -- tiles, color scale ----------------------------------------------------
 
-    if (is.null(m$b) && limits) {
+    if (is.null(nbreaks) && limits) {
 
       p = p +
         scale_fill_gradient2(name, low = low, mid = mid, high = high,
                              midpoint = midpoint, limits = c(-1, 1))
 
-    } else if (is.null(m$b)) {
+    } else if (is.null(nbreaks)) {
 
       p = p +
         scale_fill_gradient2(name, low = low, mid = mid, high = high,
@@ -272,7 +279,7 @@ ggcorr <- function(
 
     } else if (is.null(palette)) {
 
-      x = colorRampPalette(c(low, mid, high))(length(levels(m$b)))
+      x = colorRampPalette(c(low, mid, high))(length(levels(m$breaks)))
 
       p = p +
         scale_fill_manual(name, values = x, drop = drop)
@@ -287,21 +294,21 @@ ggcorr <- function(
   } else if (geom == "circle") {
 
     p = p +
-      geom_point(aes(size = abs(c) * 1.25), color = "grey50") # grey border
+      geom_point(aes(size = abs(coefficient) * 1.25), color = "grey50") # border
 
-    if (is.null(m$b)) {
+    if (is.null(nbreaks)) {
 
       # -- circles, continuous -------------------------------------------------
 
       p = p +
-        geom_point(aes(size = abs(c), color = c))
+        geom_point(aes(size = abs(coefficient), color = coefficient))
 
     } else {
 
       # -- circles, ordinal ----------------------------------------------------
 
       p = p +
-        geom_point(aes(size = abs(c), color = b))
+        geom_point(aes(size = abs(coefficient), color = breaks))
 
     }
 
@@ -313,13 +320,13 @@ ggcorr <- function(
 
     # -- circles, color scale --------------------------------------------------
 
-    if (is.null(m$b) && limits) {
+    if (is.null(nbreaks) && limits) {
 
       p = p +
         scale_color_gradient2(name, low = low, mid = mid, high = high,
                               midpoint = midpoint, limits = c(-1, 1))
 
-    } else if (is.null(m$b)) {
+    } else if (is.null(nbreaks)) {
 
       p = p +
         scale_color_gradient2(name, low = low, mid = mid, high = high,
@@ -327,7 +334,7 @@ ggcorr <- function(
 
     } else if (is.null(palette)) {
 
-      x = colorRampPalette(c(low, mid, high))(length(levels(m$b)))
+      x = colorRampPalette(c(low, mid, high))(length(levels(m$breaks)))
 
       p = p +
         scale_color_manual(name, values = x, drop = drop) +
@@ -343,31 +350,31 @@ ggcorr <- function(
 
   } else if (geom == "text") {
 
-    if (is.null(m$b)) {
+    if (is.null(nbreaks)) {
 
       # -- text, continuous ----------------------------------------------------
 
       p = p +
-        geom_text(aes(label = l, color = c), ...)
+        geom_text(aes(label = label, color = coefficient), size = label_size)
 
     } else {
 
       # -- text, ordinal -------------------------------------------------------
 
       p = p +
-        geom_text(aes(label = l, color = b), ...)
+        geom_text(aes(label = label, color = breaks), size = label_size)
 
     }
 
     # -- text, color scale ----------------------------------------------------
 
-    if (is.null(m$b) && limits) {
+    if (is.null(nbreaks) && limits) {
 
       p = p +
         scale_color_gradient2(name, low = low, mid = mid, high = high,
                               midpoint = midpoint, limits = c(-1, 1))
 
-    } else if (is.null(m$b)) {
+    } else if (is.null(nbreaks)) {
 
       p = p +
         scale_color_gradient2(name, low = low, mid = mid, high = high,
@@ -375,7 +382,7 @@ ggcorr <- function(
 
     } else if (is.null(palette)) {
 
-      x = colorRampPalette(c(low, mid, high))(length(levels(m$b)))
+      x = colorRampPalette(c(low, mid, high))(length(levels(m$breaks)))
 
       p = p +
         scale_color_manual(name, values = x, drop = drop)
@@ -396,30 +403,40 @@ ggcorr <- function(
     if (isTRUE(label_alpha)) {
 
       p = p +
-        geom_text(aes(x, y, label = l, alpha = abs(c)),
-                  color = label_color,
+        geom_text(aes(x, y, label = label, alpha = abs(coefficient)),
+                  color = label_color, size = label_size,
                   show_guide = FALSE)
 
     } else if (label_alpha > 0) {
 
       p = p +
-        geom_text(aes(x, y, label = l,
-                      alpha = label_alpha, color = label_color,
-                      show_guide = FALSE))
+        geom_text(aes(x, y, label = label, show_guide = FALSE),
+                      alpha = label_alpha, color = label_color, size = label_size)
 
     } else {
 
       p = p +
-        geom_text(aes(x, y, label = l),
-                  color = label_color)
+        geom_text(aes(x, y, label = label),
+                  color = label_color, size = label_size)
 
     }
 
   }
 
+  # -- horizontal scale expansion ----------------------------------------------
+
+  l = levels(m$y)
+
+  if (!is.numeric(layout.exp) || layout.exp < 0) {
+    stop("incorrect layout.exp value")
+  } else if (layout.exp > 0) {
+    l = c(rep(NA, as.integer(layout.exp)), l)
+  }
+
   p = p  +
-    geom_text(data = m[ m$x == m$y & is.na(m$c), ], aes(label = x), ...) +
-    scale_x_discrete(breaks = NULL, limits = levels(m$y)) +
+    geom_text(data = m[ m$x == m$y & is.na(m$coefficient), ],
+              aes(label = x), ...) +
+    scale_x_discrete(breaks = NULL, limits = l) +
     scale_y_discrete(breaks = NULL, limits = levels(m$y)) +
     labs(x = NULL, y = NULL) +
     coord_equal() +

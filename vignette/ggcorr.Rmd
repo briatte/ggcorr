@@ -1,0 +1,279 @@
+---
+title: "ggcorr: correlation matrixes with ggplot2"
+output:
+  html_document:
+    highlight: default
+    toc: true
+    theme: united
+---
+
+```{r, echo=F}
+source("../ggcorr.R")
+```
+
+# Introduction
+
+The `ggcorr` function is a visualization function to plot correlation matrixes as [`ggplot2`][ggplot2] objects. It was inspired by [a Stack Overflow question](http://stackoverflow.com/questions/12196756/significance-level-added-to-matrix-correlation-heatmap-using-ggplot2).
+
+## Rationale
+
+[Correlation matrixes](https://en.wikipedia.org/wiki/Correlation_and_dependence#Correlation_matrices) show the correlation coefficients between a relatively large number of continuous variables. However, while R offers a simple way to create such matrixes through the [`cor`][cor] function, it does not offer a plotting method for the matrixes created by that function.
+
+The `ggcorr` function offers such a plotting method, using the "grammar of graphics" implemented in the [`ggplot2`][ggplot2] package to render the plot. In practice, its results are graphically close to those of the [`corrplot`](http://www.rdocumentation.org/packages/arm/functions/corrplot) function, which is part of the excellent [`arm`](http://www.rdocumentation.org/packages/arm) package.
+
+## Installation
+
+`ggcorr` is available through the [`GGally`][ggally] package:
+
+```{r, eval=F}
+install.packages("GGally")
+```
+
+It can also be used as a standalone function:
+
+```{r, eval=F}
+source("https://raw.githubusercontent.com/briatte/ggcorr/master/ggcorr.R")
+```
+
+## Dependencies
+
+The main package dependency of `ggcorr` is the [`ggplot2`][ggplot2] package for plot construction.
+
+```{r, message=F}
+library(ggplot2)
+```
+
+The [`ggplot2`][ggplot2] package can be installed from [CRAN](https://cran.r-project.org/) through [`install.packages`](http://www.rdocumentation.org/packages/utils/functions/install.packages). Doing so will also install the [`reshape2`][reshape2] package, which is used internally by `ggcorr` for data manipulation.
+
+# Example: Basketball statistics
+
+The examples shown in this vignette use NBA statistics shared [by Nathan Yau](http://flowingdata.com/2010/01/21/how-to-make-a-heatmap-a-quick-and-easy-solution/) at his excellent blog "[Flowing Data](http://flowingdata.com/)".
+
+```{r, cache=TRUE, warning=FALSE, eval=TRUE}
+nba = read.csv("http://datasets.flowingdata.com/ppg2008.csv")
+```
+
+Let's pass the entire dataset to `ggcorr` without any further work:
+
+```{r, cache=TRUE, cache=TRUE, warning=TRUE, eval=TRUE}
+ggcorr(nba)
+```
+
+This example shows the default output of `ggcorr`. It also produced a warning to indicate that one column of the dataset did not contain numeric data and was therefore dropped from the correlation matrix. The warning can be avoided by dropping the column from the dataset passed to `ggcorr`:
+
+```{r, eval=F}
+ggcorr(nba[, -1])
+```
+
+__Note:__ when used with a continuous color scale, `ggcorr` also currently produces a warning related to color interpolation. This is an innocuous warning that should disappear in future updates of the [`ggplot2`][ggplot2] and [`scales`][scales] packages. This warning is hidden in the rest of this vignette.
+
+## Correlation dataset
+
+The first argument of `ggcorr` is called `data`. It accepts either a data frame, as shown above, or a matrix of observations, which will be converted to a data frame before plotting:
+
+```{r, eval=F}
+ggcorr(matrix(runif(5), 2, 5))
+```
+
+`ggcorr` can also accept a correlation matrix through the `cor_matrix` argument, in which case its first argument must be set to `NULL` to indicate that `ggcorr` should use the correlation matrix instead:
+
+```{r, eval=F}
+ggcorr(data = NULL, cor_matrix = cor(nba[, -1], use = "everything"))
+```
+
+## Correlation methods
+
+`ggcorr` supports all correlation methods offered by the [`cor`][cor] function. The method is controlled by the `method` argument, which takes two character strings:
+
+1. The first setting that needs to be taken into account in a correlation matrix is the selection of observations to be used. This setting might take any of the following values: `"everything"`, `"all.obs"`, `"complete.obs"`, `"na.or.complete"` or `"pairwise.complete.obs"` (the default used by `ggcorr`). These settings control how covariances are computed in the presence of missing values. The difference between each of them is explained in the documentation of the [`cor`][cor] function.
+2. The second setting that `ggcorr` requires is the type of correlation coefficient to be computed. There are three possible values for it: `"pearson"` (the default used both by `ggcorr` and by [`cor`][cor]), `"kendall"` or `"spearman"`. Again, the difference between each setting is explained in the documentation of the [`cor`][cor] function. Generally speaking, unless the data are ordinal, the default choice should be `"pearson"`, which produces correlation coefficients based on Pearson's method.
+
+Here are some examples showing how to pass different correlation methods to `ggcorr`:
+
+```{r, eval=F}
+# Pearson correlation coefficients, using pairwise observations (default method)
+ggcorr(nba[, -1], method = c("pairwise", "pearson"))
+# Pearson correlation coefficients, using all observations
+ggcorr(nba[, -1], method = c("everything", "pearson"))
+# Kendall correlation coefficients, using complete observations
+ggcorr(nba[, -1], method = c("complete", "kendall"))
+# Spearman correlation coefficients, using strictly complete observations
+ggcorr(nba[, -1], method = c("all.obs", "spearman"))
+```
+
+If no second argument is provided, `ggcorr` will default to `"pearson"`.
+
+# Plotting parameters
+
+The rest of this vignettes focuses on how to tweak the aspect of the correlation matrix plotted by `ggcorr`.
+
+## Controlling the color scale
+
+By default, `ggcorr` uses a continuous color scale that extends from $-1$ to $+1$ to show the strength of each correlation represented in the matrix. To switch to categorical colors, all the user has to do is to add the `nbreaks` argument, which specifies how many breaks should be contained in the color scale:
+
+```{r, cache=TRUE, warning=FALSE, eval=TRUE}
+ggcorr(nba[, 2:15], nbreaks = 5)
+```
+
+When the `nbreaks` argument is used, the number of digits shown in the color scale is controlled through the `digits` argument. The `digits` argument defaults to two digits, but as shown in the example above, it will default to a single digit if the breaks do not require more precision.
+
+Further control over the color scale includes the `name` argument, which sets its title, the `legend.size` argument, which sets the size of the legend text, and the `legend.position` argument, which controls where the legend is displayed. The latter two are just shortcuts to the same arguments in [`ggplot2`][ggplot2]'s [`theme`](http://docs.ggplot2.org/current/theme.html), and since the plot is a [`ggplot2`][ggplot2] object, all other relevant [`theme`](http://docs.ggplot2.org/current/theme.html) and [`guides`](http://docs.ggplot2.org/current/guides.html) methods also apply:
+
+```{r, warning=FALSE, eval=F}
+ggcorr(nba[, 2:15], name = expression(rho), legend.position = "bottom", legend.size = 12) +
+  guides(fill = guide_colorbar(barwidth = 18, title.vjust = 0.75)) +
+  theme(legend.title = element_text(size = 14))
+```
+
+## Controlling the color palette
+
+`ggcorr` uses a default color gradient that goes from bright red to light grey to bright blue. This gradient can be modified through the `low`, `mid` and `high` arguments, which are similar to those of the [`scale_gradient2`](http://docs.ggplot2.org/current/scale_gradient2.html) controller in [`ggplot2`][ggplot2]:
+
+```{r, wcache=TRUE, arning=FALSE, eval=TRUE}
+ggcorr(nba[, 2:15], low = "steelblue", mid = "white", high = "darkred")
+```
+
+By default, the midpoint of the gradient is set at $0$, which indicates a null correlation. The `midpoint` argument can be used to modify this setting. In particular, setting `midpoint` to `NULL` will automatically select the median correlation coefficient as the midpoint, and will show that value to the user:
+
+```{r, eval=F}
+ggcorr(nba[, 2:15], midpoint = NULL)
+```
+
+```{r, echo=F, cache=TRUE, warning=FALSE, eval=TRUE}
+p = ggcorr(nba[, 2:15], midpoint = NULL)
+```
+
+A final option for controlling the colors of the color scale is to use a [ColorBrewer][colorbrewer] palette through the `palette` argument. This argument should be used only when the color scale is categorical, i.e. when the `nbreaks` argument is in use:
+
+```{r, cache=TRUE, warning=FALSE, eval=TRUE}
+ggcorr(nba[, 2:15], nbreaks = 4, palette = "RdGy")
+```
+
+__Note:__ trying to use a [ColorBrewer][colorbrewer] palette on a color scale that contains more breaks than there are colors in the palette will return a warning (two identical warnings, actually) to the user.
+
+## Controlling the main geometry
+
+By default, `ggcorr` uses color tiles to represent the strength of the correlation coefficients, in similar fashion to how heatmaps represent counts of observations (the data used in this vignette were initially used to [illustrate such heatmaps](http://flowingdata.com/2010/01/21/how-to-make-a-heatmap-a-quick-and-easy-solution/)).
+
+`ggcorr` can also represent the correlations as proportionally sized circles. All it takes is to set its `geom` argument to `"circle"`:
+
+```{r, cache=TRUE, warning=FALSE, eval=TRUE}
+ggcorr(nba[, 2:15], geom = "circle", nbreaks = 5)
+```
+
+Additionally, the user might set the minimum and maximum size of the circles through the `min_size` and `max_size` arguments:
+
+```{r, eval=F}
+ggcorr(nba[, 2:15], geom = "circle", nbreaks = 5, min_size = 0, max_size = 6)
+```
+
+Additional controls over the geometry of `ggcorr` are illustrated towards the end of this vignette.
+
+## Controlling the coefficient labels
+
+`ggcorr` can show the correlation coefficients on top of the correlation matrix by seeting the `label` argument to `TRUE`:
+
+```{r, cache=TRUE, warning=FALSE, eval=TRUE}
+ggcorr(nba[, 2:15], label = TRUE)
+```
+
+The `label_color` and `label_size` arguments allow to style the coefficient labels:
+
+```{r, cache=TRUE, warning=FALSE, eval=TRUE}
+ggcorr(nba[, 2:15], nbreaks = 4, palette = "RdGy", label = TRUE, label_size = 3, label_color = "white")
+```
+
+The `label_round` argument further controls the number of digits shown in the coefficient labels, which defaults to a single digit, the `label_alpha` argument controls the level of transparency of the labels. If `label_alpha` is set to `TRUE`, the level of transparency will vary like the correlation coefficient, increasing as it moves further away from $0$:
+
+```{r, cache=TRUE, warning=FALSE, eval=TRUE}
+ggcorr(nba[, 2:15], label = TRUE, label_size = 3, label_round = 2, label_alpha = TRUE)
+```
+
+## Controlling the variable labels
+
+In several of the examples above, the rendering of the variable labels (which are shown on the diagonal of the correlation matrix) is not necessarily optimal. To modify the aspect of these labels, all the user has to do is to pass any argument supported by `geom_text` directly to `ggcorr`. The example below shows how to reduce the size of the labels while moving them to the left and changing their color:
+
+```{r, cache=TRUE, warning=FALSE, eval=TRUE}
+ggcorr(nba[, 2:15], hjust = 0.75, size = 5, color = "grey50")
+```
+
+One issue that is likely to arise with variable labels in a correlation matrix is that they will be too long to be displayed in full at the bottom-left of the plot. This issue is illustrated below by starting the correlation matrix with the `MIN` variable, which appears to be slightly clipped at the very bottom-left of the plot:
+
+```{r, cache=TRUE, warning=FALSE, eval=TRUE}
+ggcorr(nba[, 3:16], hjust = 0.75, size = 5, color = "grey50")
+```
+
+To solve this issue, `ggcorr` can add some whitespace to the horizontal axis of the plot through the `layout.exp` argument. Passing any numeric value to this argument will add one or more 'invisible tile(s)' to the left of the plot, which can help displaying variables with long names:
+
+```{r, cache=TRUE, warning=FALSE, eval=TRUE}
+ggcorr(nba[, 3:16], hjust = 0.75, size = 5, color = "grey50", layout.exp = 1)
+```
+
+# Additional controls
+
+## Clipping the correlation scale
+
+It might be useful, in some circumstances, to show the empirical range of correlation coefficients instead of the full $(-1, +1)$ range in the color scale. When the color scale is a continuous color gradient, this can be achieved by setting the `limits` argument to `FALSE`:
+
+```{r, eval=F}
+ggcorr(nba[, 2:15], limits = FALSE)
+```
+
+When the color scale is categorical, setting the `limits` argument to `FALSE` or, equivalently, setting the `drop` argument to `TRUE` will drop the breaks that do not correspond to any of the correlation coefficients:
+
+```{r, eval=F}
+ggcorr(nba[, 2:15], nbreaks = 9, limits = FALSE)
+ggcorr(nba[, 2:15], nbreaks = 9, drop = TRUE)
+```
+
+## Styling the correlation coefficients
+
+If the `geom` argument of `ggcorr` is set to `"text"`, it will represent the correlation coefficients as their (colored) values:
+
+```{r, cache=TRUE, warning=FALSE, eval=TRUE}
+ggcorr(nba[, 2:15], geom = "text", nbreaks = 5, palette = "RdYlBu", hjust = 1)
+```
+
+The size of these values will be set to that of `label_size`, which allows to overimpose coefficient labels:
+
+```{r, cache=TRUE, warning=FALSE, eval=TRUE}
+ggcorr(nba[, 2:15], geom = "text", nbreaks = 5, palette = "RdYlBu", hjust = 1, label = TRUE, label_alpha = 0.5)
+```
+
+Last, if the `geom` argument of `ggcorr` is set to `"blank"`, it will plot nothing, which is useful when hacking into the internal values of the plot, as illustrated below.
+
+## Controlling the internal values
+
+Since `ggcorr` produces [`ggplot2`][ggplot2] objects, it can be useful to understand how the object is constructed in order to obtain more specific plots from it. Every `ggcorr` object contains the following `data` object:
+
+```{r, cache=TRUE, warning=FALSE, eval=TRUE}
+head(ggcorr(nba[, 2:15])$data, 5)
+```
+
+This allows for a fair amount of "hacking" into the internal values of `ggcorr`, as in the following example, which highlights all correlation coefficients superior to $0.5$ or inferior to $-0.5$, using different colors for negative and positive coefficients:
+
+```{r}
+ggcorr(nba[, 2:15], geom = "blank", label = TRUE, hjust = 0.75) +
+  geom_point(size = 10, aes(color = coefficient > 0, alpha = abs(coefficient) > 0.5)) +
+  scale_alpha_manual(values = c("TRUE" = 0.25, "FALSE" = 0)) +
+  guides(color = FALSE, alpha = FALSE)
+```
+
+# Known limitations
+
+`ggcorr` is strictly limited to correlation matrixes: it cannot plot heatmaps or cluster heatmaps (the latter can be plotted with [`ggplot2`][ggplot2] through the [`gapmap`](http://www.rdocumentation.org/packages/gapmap) package). For scatterplot matrixes, see the [`ggpairs`](http://www.rdocumentation.org/packages/GGally/functions/ggpairs) function, which is also part of the [`GGally`][ggally] package.
+
+If you find other limitations to `ggcorr`, please [submit an issue](https://github.com/briatte/ggcorr/issues) about them, thanks!
+
+---
+
+```{r, results='asis', echo=F, cache=TRUE, warning=FALSE, eval=TRUE}
+cat("Last printed ", gsub("\\s+", " ", format(Sys.time(), "%b %e, %Y")), ".", sep = "")
+```
+
+[colorbrewer]: http://colorbrewer2.org/
+[cor]: http://www.rdocumentation.org/packages/stats/function/cor
+[ggally]: http://www.rdocumentation.org/packages/GGally
+[ggplot2]: http://ggplot2.org/
+[reshape2]: http://www.rdocumentation.org/packages/reshape2
+[scales]: http://www.rdocumentation.org/packages/scales
