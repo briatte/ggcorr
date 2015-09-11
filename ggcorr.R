@@ -8,7 +8,7 @@ if (getRversion() >= "2.15.1") {
 #' The function is directly inspired by Tian Zheng and Yu-Sung Su's
 #' \code{\link[arm]{corrplot}} function.
 #' Please visit \url{http://github.com/briatte/ggcorr} for the latest version
-#' of \code{ggcorr}, and see the vignette at 
+#' of \code{ggcorr}, and see the vignette at
 #' \url{https://briatte.github.io/ggcorr/} for many examples of how to use it.
 #'
 #' @export
@@ -52,7 +52,10 @@ if (getRversion() >= "2.15.1") {
 #' Defaults to \code{"grey75"}.
 #' @param label_round the decimal rounding of the correlation coefficients.
 #' Defaults to \code{1}.
-#' @param nbreaks the number of breaks to apply to the correlation coefficients.
+#' @param label_size the size of the correlation coefficients.
+#' Defaults to \code{4}.
+#' @param nbreaks the number of breaks to apply to the correlation coefficients,
+#' which results in a categorical color scale. See 'Note'.
 #' Defaults to \code{NULL} (no breaks, continuous scaling).
 #' @param digits the number of digits to show in the breaks of the correlation
 #' coefficients: see \code{\link[base]{cut}} for details.
@@ -72,12 +75,11 @@ if (getRversion() >= "2.15.1") {
 #' @param limits whether to bound the color scaling of the correlation
 #' coefficients between -1 and +1.
 #' Defaults to \code{TRUE} (recommended).
-#' @param drop whether to use the empirical range of the correlation
-#' coefficients in the color scale, which is \emph{not} recommended (see
-#' 'Details').
-#' Defaults to \code{FALSE}.
-#' @param layout.exp a multiplier to expand the horizontal axis if variable
-#' names get clipped: see \link[scales]{expand_range} for details.
+#' @param drop if using \code{nbreaks}, whether to drop unused breaks from the
+#' color scale.
+#' Defaults to \code{FALSE} (recommended).
+#' @param layout.exp a multiplier to expand the horizontal axis to the left if
+#' variable names get clipped.
 #' Defaults to \code{0} (no expansion).
 #' @param legend.position where to put the legend of the correlation
 #' coefficients: see \code{\link[ggplot2]{theme}} for details.
@@ -87,17 +89,12 @@ if (getRversion() >= "2.15.1") {
 #' Defaults to \code{9}.
 #' @param ... other arguments supplied to \code{\link[ggplot2]{geom_text}} for
 #' the diagonal labels.
-#' @details The \code{nbreaks} argument tries to break up the correlation
-#' coefficients into an ordinal color scale. Recommended values for the numbers
-#' of breaks are \code{3} to \code{11}, as values above 11 are visually
-#' difficult to separate and are not supported by diverging ColorBrewer
-#' palettes.
+#' @note Recommended values for the \code{nbreaks} argument are \code{3} to
+#' \code{11}, as values above 11 are visually difficult to separate and are not
+#' supported by diverging ColorBrewer palettes.
 #'
-#' The breaks will range from \code{-1} to \code{+1}, unless \code{drop} is set
-#' to \code{FALSE}, in which case the empirical range of the correlation
-#' coefficients is used. The latter is not recommended, as it creates a
-#' disbalance between the colors of negative and positive coefficients.
-#' @seealso \code{\link[stats]{cor}} and \code{\link[arm]{corrplot}}
+#' @seealso \code{\link[stats]{cor}} and \code{\link[arm]{corrplot}} in the
+#' \code{arm} package.
 #' @author Francois Briatte, with contributions from Amos B. Elberg and
 #' Barret Schloerke
 #' @importFrom reshape2 melt
@@ -139,9 +136,9 @@ ggcorr <- function(
   nbreaks = NULL,
   digits = 2,
   name = "",
-  low = "#3B9AB2",  # (blue) replaces "#d73027" (red)
-  mid = "#EEEEEE",  # (grey) replaces "#ffffbf" (light yellow)
-  high = "#F21A00", # (red)  replaces "#1a9850" (green)
+  low = "#3B9AB2",
+  mid = "#EEEEEE",
+  high = "#F21A00",
   midpoint = 0,
   palette = NULL,
   geom = "tile",
