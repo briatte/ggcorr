@@ -202,7 +202,6 @@ ggcorr <- function(
   }
 
   m = cor_matrix
-  colnames(m) = rownames(m) = gsub(" ", "_", colnames(m)) # protect spaces
 
   # -- correlation data.frame --------------------------------------------------
 
