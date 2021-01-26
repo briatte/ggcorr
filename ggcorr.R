@@ -202,6 +202,7 @@ ggcorr <- function(
   }
 
   m = cor_matrix
+  names(m) = rownames(m)
 
   # -- correlation data.frame --------------------------------------------------
 
